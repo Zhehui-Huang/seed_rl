@@ -48,7 +48,6 @@ def make_atari_env(env_name, cfg, **kwargs):
 
     # if 'Montezuma' in atari_cfg.env_id or 'Pitfall' in atari_cfg.env_id:
     #     env = AtariVisitedRoomsInfoWrapper(env)
-
     add_channel_dim = cfg.env_framestack == 1
     env = ResizeWrapper(
         env, ATARI_W, ATARI_H, grayscale=True, add_channel_dim=add_channel_dim, area_interpolation=False,
@@ -61,5 +60,5 @@ def make_atari_env(env_name, cfg, **kwargs):
     if cfg.env_framestack == 1:
         env = SkipFramesWrapper(env, skip_frames=cfg.env_frameskip)
     else:
-        env = SkipAndStackFramesWrapper(env, skip_frames=cfg.env_frameskip, stack_frames=4, channel_config='CHW')
+        env = SkipAndStackFramesWrapper(env, skip_frames=cfg.env_frameskip, stack_frames=4, channel_config=cfg.pixel_format)
     return env

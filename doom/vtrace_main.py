@@ -36,8 +36,8 @@ from logging import handlers
 FLAGS = flags.FLAGS
 
 # Optimizer settings.
-flags.DEFINE_float('learning_rate', 0.00048, 'Learning rate.')
-flags.DEFINE_float('adam_epsilon', 3.125e-7, 'Adam epsilon.')
+flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate.')
+flags.DEFINE_float('adam_epsilon', 1e-06, 'Adam epsilon.')
 
 class Logger(object):
     level_relations = {
@@ -67,25 +67,19 @@ def create_agent(action_space, unused_env_observation_space,
 
 
 def create_optimizer(final_iteration):
-  learning_rate_fn = tf.keras.optimizers.schedules.PolynomialDecay(
-      FLAGS.learning_rate, final_iteration, 0)
-  # optimizer = tf.keras.optimizers.Adam(learning_rate_fn, beta_1=0,
-  #                                      epsilon=FLAGS.adam_epsilon)
-  optimizer = tf.keras.optimizers.Adam(FLAGS.learning_Rate, epsilon=FLAGS.adam_epsilon)
+  learning_rate_fn = tf.keras.optimizers.schedules.PolynomialDecay(FLAGS.learning_rate, final_iteration, 0)
+  optimizer = tf.keras.optimizers.Adam(FLAGS.learning_rate, epsilon=FLAGS.adam_epsilon)
   return optimizer, learning_rate_fn
+
 
 
 DOOM_W = 128
 DOOM_H = 72
 
-flags.DEFINE_string('doom_env', 'doom_benchmark', 'env to use')
-flags.DEFINE_integer('width', DOOM_W, 'Width of observation.')
-flags.DEFINE_integer('height', DOOM_H, 'Height of observation.')
 flags.DEFINE_integer('num_action_repeats', 4, 'Number of action repeats.')
 
 def create_doom_env(x):
-    env_name = FLAGS.doom_env
-    print('Using env ', env_name)
+    env_name = 'doom_benchmark'
     cfg = default_cfg(env=env_name, algo=None)
     cfg.pixel_format = 'HWC'
     cfg.res_w = DOOM_W
@@ -94,7 +88,7 @@ def create_doom_env(x):
     return create_env(env_name, cfg=cfg)
 
 def main(argv):
-  fps_log = Logger('fps.log', level='info')
+  fps_log = Logger('doom_vtrace_fps.log', level='info')
   if len(argv) > 1:
     raise app.UsageError('Too many command-line arguments.')
   if FLAGS.run_mode == 'actor':

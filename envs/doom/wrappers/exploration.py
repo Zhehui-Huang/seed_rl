@@ -1,10 +1,8 @@
 import math
 from collections import deque
-import numpy as np
 
 import gym
-
-from seed_rl.utils.utils import log
+import numpy as np
 
 
 class ExplorationWrapper(gym.Wrapper):

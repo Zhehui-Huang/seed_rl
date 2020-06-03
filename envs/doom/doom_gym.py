@@ -13,7 +13,7 @@ from filelock import FileLock, Timeout
 from gym.utils import seeding
 from vizdoom.vizdoom import ScreenResolution, DoomGame, Mode, AutomapMode
 
-from seed_rl.algorithms.utils.spaces.discretized import Discretized
+from seed_rl.algorithms.spaces.discretized import Discretized
 from seed_rl.utils.utils import log, project_tmp_dir
 
 
@@ -217,7 +217,7 @@ class VizdoomEnv(gym.Env):
                     )
             except Exception as exc:
                 log.warning('VizDoom game.init() threw an exception %r. Terminate process...', exc)
-                from seed_rl.envs.env_utils import EnvCriticalError
+                from envs.env_utils import EnvCriticalError
                 raise EnvCriticalError()
 
     def initialize(self):
@@ -348,14 +348,7 @@ class VizdoomEnv(gym.Env):
 
         actions_flattened = []
         for i, action in enumerate(actions):
-            if isinstance(spaces[i], Discretized):
-                # discretized continuous action
-                # check discretized first because it's a subclass of gym.spaces.Discrete
-                # the order of if clauses here matters! DON'T CHANGE THE ORDER OF IFS!
-
-                continuous_action = spaces[i].to_continuous(action)
-                actions_flattened.append(continuous_action)
-            elif isinstance(spaces[i], gym.spaces.Discrete):
+            if isinstance(spaces[i], gym.spaces.Discrete):
                 # standard discrete action
                 num_non_idle_actions = spaces[i].n - 1
                 action_one_hot = np.zeros(num_non_idle_actions, dtype=np.uint8)
@@ -363,6 +356,10 @@ class VizdoomEnv(gym.Env):
                     action_one_hot[action - 1] = 1  # 0th action in each subspace is a no-op
 
                 actions_flattened.extend(action_one_hot)
+            elif isinstance(spaces[i], Discretized):
+                # discretized continuous action
+                continuous_action = spaces[i].to_continuous(action)
+                actions_flattened.append(continuous_action)
             elif isinstance(spaces[i], gym.spaces.Box):
                 # continuous action
                 actions_flattened.extend(list(action * self.delta_actions_scaling_factor))

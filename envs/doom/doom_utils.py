@@ -1,10 +1,10 @@
 from gym.spaces import Discrete
 
 from seed_rl.envs.doom.action_space import doom_action_space, \
-    doom_action_space_full_discretized, doom_action_space_basic, doom_action_space_discretized_no_weap, \
-    doom_action_space_extended, doom_turn_and_attack_only
+    doom_action_space_full_discretized, doom_action_space_basic, doom_action_space_discretized_no_weap
 from seed_rl.envs.doom.doom_gym import VizdoomEnv
 
+from seed_rl.envs.doom.doom_model import register_models
 from seed_rl.envs.doom.wrappers.additional_input import DoomAdditionalInput
 from seed_rl.envs.doom.wrappers.bot_difficulty import BotDifficultyWrapper
 from seed_rl.envs.doom.wrappers.multiplayer_stats import MultiplayerStatsWrapper
@@ -81,15 +81,12 @@ DOOM_ENVS = [
 
     # <==== Environments used in the paper ====>
 
-    # this is for comparison with other frameworks (wall-time test)
-    DoomSpec('doom_my_way_home_flat_actions', 'my_way_home.cfg', Discrete(1 + 4), 1.0),
-    DoomSpec('doom_defend_the_center_flat_actions', 'defend_the_center.cfg', Discrete(1 + 3), 1.0),
-
     # "basic" single-player envs
-    DoomSpec('doom_my_way_home', 'my_way_home.cfg', doom_action_space_basic(), 1.0),
-    DoomSpec('doom_deadly_corridor', 'deadly_corridor.cfg', doom_action_space_extended(), 0.01),
-    DoomSpec('doom_defend_the_center', 'defend_the_center.cfg', doom_turn_and_attack_only(), 1.0),
-    DoomSpec('doom_defend_the_line', 'defend_the_line.cfg', doom_turn_and_attack_only(), 1.0),
+
+    DoomSpec('doom_my_way_home', 'my_way_home.cfg', Discrete(1 + 4), 1.0),
+    DoomSpec('doom_deadly_corridor', 'deadly_corridor.cfg', Discrete(1 + 7), 0.01),
+    DoomSpec('doom_defend_the_center', 'defend_the_center.cfg', Discrete(1 + 3), 1.0),
+    DoomSpec('doom_defend_the_line', 'defend_the_line.cfg', Discrete(1 + 3), 1.0),
     DoomSpec(
         'doom_health_gathering', 'health_gathering.cfg', Discrete(1 + 4), 1.0,
         extra_wrappers=[(DoomGatheringRewardShaping, {})],  # same as https://arxiv.org/pdf/1904.01806.pdf
@@ -189,7 +186,7 @@ def make_doom_env_impl(
     else:
         timelimit = cfg.timelimit if cfg.timelimit is not None else doom_spec.timelimit
 
-        from seed_rl.envs.doom.multiplayer.doom_multiagent import VizdoomEnvMultiplayer
+        from envs.doom.multiplayer.doom_multiagent import VizdoomEnvMultiplayer
         env = VizdoomEnvMultiplayer(
             doom_spec.action_space, doom_spec.env_spec_file,
             player_id=player_id, num_agents=num_agents, max_num_players=max_num_players, num_bots=num_bots,
@@ -275,7 +272,7 @@ def make_doom_multiplayer_env(doom_spec, cfg=None, env_config=None, **kwargs):
     if is_multiagent:
         # create a wrapper that treats multiple game instances as a single multi-agent environment
 
-        from seed_rl.envs.doom.multiplayer.doom_multiagent_wrapper import MultiAgentEnv
+        from envs.doom.multiplayer.doom_multiagent_wrapper import MultiAgentEnv
         env = MultiAgentEnv(
             num_agents=num_agents,
             make_env_func=make_env_func,
@@ -284,7 +281,7 @@ def make_doom_multiplayer_env(doom_spec, cfg=None, env_config=None, **kwargs):
         )
     else:
         # if we have only one agent, there's no need for multi-agent wrapper
-        from seed_rl.envs.doom.multiplayer.doom_multiagent_wrapper import init_multiplayer_env
+        from envs.doom.multiplayer.doom_multiagent_wrapper import init_multiplayer_env
         env = init_multiplayer_env(make_env_func, player_id=0, env_config=env_config)
 
     return env
@@ -306,5 +303,7 @@ def ensure_initialized():
     global VIZDOOM_INITIALIZED
     if VIZDOOM_INITIALIZED:
         return
+
+    register_models()
 
     VIZDOOM_INITIALIZED = True

@@ -58,4 +58,4 @@ RUN pip3 install tensorboardx==1.8
 # Copy SEED codebase and SEED GRPC binaries.
 ADD . /seed_rl/
 WORKDIR /seed_rl
-ENTRYPOINT ["conda", "run", "-n", "sample-factory", "python", "gcp/run.py"]
+ENTRYPOINT ["python3", "gcp/run.py"]

@@ -18,22 +18,49 @@
 Actor and learner are in the same binary so that all flags are shared.
 """
 
+import logging
+from logging import handlers
 from absl import app
 from absl import flags
 from seed_rl.agents.r2d2 import learner
 from seed_rl.atari import env
 from seed_rl.atari import networks
 from seed_rl.common import actor
-from seed_rl.common import common_flags  
+from seed_rl.common import common_flags
 import tensorflow as tf
 
+from seed_rl.algorithms.utils.arguments import default_cfg
+from seed_rl.envs.atari.atari_utils import ATARI_W, ATARI_H
+from seed_rl.envs.create_env import create_env
+
+
+class Logger(object):
+    level_relations = {
+        'debug':logging.DEBUG,
+        'info':logging.INFO,
+        'warning':logging.WARNING,
+        'error':logging.ERROR,
+        'crit':logging.CRITICAL
+    }
+
+    def __init__(self,filename,level='info',when='D',backCount=3,
+                 fmt='%(asctime)s : %(message)s'):
+        self.logger = logging.getLogger(filename)
+        format_str = logging.Formatter(fmt)
+        self.logger.setLevel(self.level_relations.get(level))
+        sh = logging.StreamHandler()
+        sh.setFormatter(format_str)
+        th = handlers.TimedRotatingFileHandler(filename=filename,when=when,backupCount=backCount,encoding='utf-8')
+        th.setFormatter(format_str)
+        self.logger.addHandler(sh)
+        self.logger.addHandler(th)
 
 
 FLAGS = flags.FLAGS
 
 # Optimizer settings.
-flags.DEFINE_float('learning_rate', 0.00048, 'Learning rate.')
-flags.DEFINE_float('adam_epsilon', 1e-3, 'Adam epsilon.')
+flags.DEFINE_float('learning_rate', 0.0001, 'Learning rate.')
+flags.DEFINE_float('adam_epsilon', 1e-6, 'Adam epsilon.')
 
 flags.DEFINE_integer('stack_size', 4, 'Number of frames to stack.')
 
@@ -49,16 +76,27 @@ def create_optimizer(unused_final_iteration):
                                        epsilon=FLAGS.adam_epsilon)
   return optimizer, learning_rate_fn
 
+def create_atari_env(x):
+    env_name = 'atari_breakout'
+    cfg = default_cfg(env=env_name, algo=None)
+    cfg.pixel_format = 'HWC'
+    cfg.res_w = ATARI_W
+    cfg.res_h = ATARI_H
+    cfg.env_framestack = 1
+    return create_env(env_name, cfg=cfg)
 
 def main(argv):
+  fps_log = Logger('atari_r2d2_fps.log', level='info')
+
   if len(argv) > 1:
     raise app.UsageError('Too many command-line arguments.')
   if FLAGS.run_mode == 'actor':
-    actor.actor_loop(env.create_environment)
+    actor.actor_loop(create_atari_env)
   elif FLAGS.run_mode == 'learner':
-    learner.learner_loop(env.create_environment,
+    learner.learner_loop(create_atari_env,
                          create_agent,
-                         create_optimizer)
+                         create_optimizer,
+                         fps_log)
   else:
     raise ValueError('Unsupported run mode {}'.format(FLAGS.run_mode))
 

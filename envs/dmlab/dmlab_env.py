@@ -15,6 +15,23 @@ from seed_rl.utils.utils import log, experiment_dir, static_vars
 
 DMLAB_INITIALIZED = False
 
+from absl import flags
+FLAGS = flags.FLAGS
+
+flags.DEFINE_string('homepath', '', 'Labyrinth homepath.')
+flags.DEFINE_string(
+    'dataset_path', '', 'Path to dataset needed for psychlab_*, see '
+    'https://github.com/deepmind/lab/tree/master/data/brady_konkle_oliva2008')
+
+#flags.DEFINE_string('game', 'explore_goal_locations_small', 'Game/level name.')
+flags.DEFINE_string('game', 'rooms_collect_good_objects_train', 'Game/level name.')
+
+
+flags.DEFINE_integer('width', 96, 'Width of observation.')
+flags.DEFINE_integer('height', 72, 'Height of observation.')
+flags.DEFINE_integer('num_action_repeats', 4, 'Number of action repeats.')
+flags.DEFINE_string('level_cache_dir', None, 'Global level cache directory.')
+
 
 def get_dataset_path(cfg):
     cfg_dataset_path = os.path.expanduser(cfg.dmlab30_dataset)
@@ -38,6 +55,7 @@ DMLAB_ENVS = [
     # this is very hard to work with as a benchmark, because FPS fluctuates a lot due to slow resets.
     # also depends a lot on whether levels are in level cache or not
     DmLabSpec('dmlab_benchmark_slow_reset', 'contributed/dmlab30/rooms_keys_doors_puzzle'),
+
 
     DmLabSpec('dmlab_sparse', 'contributed/dmlab30/explore_goal_locations_large'),
     DmLabSpec('dmlab_very_sparse', 'contributed/dmlab30/explore_goal_locations_large', extra_cfg={'minGoalDistance': '10'}),
@@ -118,7 +136,7 @@ def make_dmlab_env_impl(spec, cfg, env_config, **kwargs):
         cfg.dmlab_use_level_cache, gpu_idx, spec.extra_cfg,
     )
 
-    if env_config and 'env_id' in env_config:
+    if env_config:
         env.seed(env_config['env_id'])
 
     if 'record_to' in cfg and cfg.record_to is not None:

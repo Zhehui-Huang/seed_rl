@@ -74,14 +74,25 @@ class ImpalaDeep(tf.Module):
 
     # Parameters and layers for unroll.
     self._num_actions = num_actions
-    self._core = tf.keras.layers.LSTMCell(256)
+
+    self._core = tf.keras.layers.LSTMCell(512)
 
     # Parameters and layers for _torso.
+    #(32, 8, 4), (64, 4, 2), (128, 3, 2)
     self._stacks = [
-        _Stack(num_ch, num_blocks)
-        for num_ch, num_blocks in [(16, 2), (32, 2), (32, 2)]
+        tf.keras.layers.Conv2D(32, 8, 4, padding='same'),
+        tf.keras.layers.Conv2D(64, 4, 2, padding='same'),
+        tf.keras.layers.Conv2D(128, 3, 2, padding='same'),
     ]
-    self._conv_to_linear = tf.keras.layers.Dense(256)
+    self._conv_to_linear = tf.keras.layers.Dense(512)
+    # self._core = tf.keras.layers.LSTMCell(256)
+    #
+    # # Parameters and layers for _torso.
+    # self._stacks = [
+    #     _Stack(num_ch, num_blocks)
+    #     for num_ch, num_blocks in [(16, 2), (32, 2), (32, 2)]
+    # ]
+    # self._conv_to_linear = tf.keras.layers.Dense(256)
 
     # Layers for _head.
     self._policy_logits = tf.keras.layers.Dense(
@@ -99,6 +110,7 @@ class ImpalaDeep(tf.Module):
 
     frame /= 255
     conv_out = frame
+
     for stack in self._stacks:
       conv_out = stack(conv_out)
 
